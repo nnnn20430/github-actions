@@ -88,5 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: write
+    env:
+      GH_REPO: ${{github.repository}}
     steps:
-    - run: GH_REPO=${{github.repository}} gh workflow enable "${GITHUB_WORKFLOW##*/}"
+    - run: gh workflow enable "${GITHUB_WORKFLOW##*/}"
