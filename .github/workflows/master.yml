@@ -1,0 +1,25 @@
+name: Run automated tasks
+
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: "0 0 * * *"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Hello World
+      run: echo Hello World
+
+  workflow-keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+    - uses: liskin/gh-workflow-keepalive@v1
