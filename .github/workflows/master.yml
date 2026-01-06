@@ -20,7 +20,7 @@ jobs:
         LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz | gunzip -c | awk '/^Package: prosody$/,/^$/' | grep '^Version:' | cut -d' ' -f2-)"
         echo "Latest prosody package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
-        [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV
+        [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
     - name: Checkout prosody docker repo
       if: ${{!env.LATEST}}
       uses: actions/checkout@v6
