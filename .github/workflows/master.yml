@@ -32,16 +32,43 @@ jobs:
     - name: Build image
       if: ${{!env.LATEST}}
       working-directory: ./prosody
-      run: docker build . --file Dockerfile --tag prosody --build-arg PROSODY_PACKAGE=${{env.PROSODY_PACKAGE}}
+      run: docker build . --tag prosody --build-arg PROSODY_PACKAGE=${{env.PROSODY_PACKAGE}}
     - name: Log in to registry
       if: ${{!env.LATEST}}
       run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
-        IMAGE_ID=ghcr.io/${{ github.repository_owner }}/prosody
-        GITHUB_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set PROSODY_VERSION -R nnnn20430/github-actions --body "${{env.LATEST_VERSION}}"
+        IMAGE_ID=ghcr.io/${{github.repository_owner}}/prosody
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=nnnn20430/github-actions gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
         docker tag prosody $IMAGE_ID:latest
+        docker push $IMAGE_ID:latest
+
+  build-jami-daemon:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+    - name: Checkout jami-daemon repo
+      run: |
+        git clone --depth 1 https://git.jami.net/savoirfairelinux/jami-daemon.git
+        LATEST_VERSION="$(TZ=UTC git -C jami-daemon show -s --pretty=%cd --date=format-local:%Y%m%d HEAD)"
+        echo "Latest Jami daemon version is $LATEST_VERSION"
+        echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+        [ x"$LATEST_VERSION" == x"${{vars.JAMI_DAEMON_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
+    - name: Build image
+      if: ${{!env.LATEST}}
+      working-directory: ./jami-daemon
+      run: docker build . --tag jami-daemon --build-arg cmake_args=-DJAMI_NODEJS=ON
+    - name: Log in to registry
+      if: ${{!env.LATEST}}
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
+    - name: Push image
+      if: ${{!env.LATEST}}
+      run: |
+        IMAGE_ID=ghcr.io/${{github.repository_owner}}/jami-daemon
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=nnnn20430/github-actions gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
+        docker tag jami-daemon $IMAGE_ID:latest
         docker push $IMAGE_ID:latest
 
   workflow-keepalive:
