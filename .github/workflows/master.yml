@@ -15,19 +15,30 @@ jobs:
     permissions:
       packages: write
     steps:
+    - name: Check version
+      run: |
+        LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz | gunzip -c | awk '/^Package: prosody$/,/^$/' | grep '^Version:' | cut -d' ' -f2-)"
+        echo "Latest prosody package version is $LATEST_VERSION"
+        echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+        [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV
     - name: Checkout prosody docker repo
+      if: ${{!env.LATEST}}
       uses: actions/checkout@v6
       with:
         repository: prosody/prosody-docker
         path: prosody
     - name: Build image
+      if: ${{!env.LATEST}}
       working-directory: ./prosody
-      run: docker build . --file Dockerfile --tag prosody
+      run: docker build . --file Dockerfile --tag prosody --build-arg PROSODY_PACKAGE=prosody
     - name: Log in to registry
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      if: ${{!env.LATEST}}
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
     - name: Push image
+      if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{ github.repository_owner }}/prosody
+        GITHUB_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
         docker tag prosody $IMAGE_ID:latest
         docker push $IMAGE_ID:latest
 
