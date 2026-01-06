@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+    env:
+      PROSODY_PACKAGE: prosody-13.0
     steps:
     - name: Check version
       run: |
-        LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz | gunzip -c | awk '/^Package: prosody$/,/^$/' | grep '^Version:' | cut -d' ' -f2-)"
+        LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz | gunzip -c | awk '/^Package: ${{PROSODY_PACKAGE}}$/,/^$/' | grep '^Version:' | cut -d' ' -f2-)"
         echo "Latest prosody package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
         [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
@@ -30,7 +32,7 @@ jobs:
     - name: Build image
       if: ${{!env.LATEST}}
       working-directory: ./prosody
-      run: docker build . --file Dockerfile --tag prosody --build-arg PROSODY_PACKAGE=prosody
+      run: docker build . --file Dockerfile --tag prosody --build-arg PROSODY_PACKAGE=${{PROSODY_PACKAGE}}
     - name: Log in to registry
       if: ${{!env.LATEST}}
       run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
