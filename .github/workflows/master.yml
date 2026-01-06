@@ -40,7 +40,7 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{ github.repository_owner }}/prosody
-        GITHUB_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
+        GITHUB_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set PROSODY_VERSION -R nnnn20430/github-actions --body "${{env.LATEST_VERSION}}"
         docker tag prosody $IMAGE_ID:latest
         docker push $IMAGE_ID:latest
 
