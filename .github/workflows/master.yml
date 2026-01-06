@@ -19,7 +19,11 @@ jobs:
     steps:
     - name: Check version
       run: |
-        LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz | gunzip -c | awk '/^Package: ${{env.PROSODY_PACKAGE}}$/,/^$/' | grep '^Version:' | cut -d' ' -f2-)"
+        LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz \
+          | gunzip -c \
+          | awk '/^Package: ${{env.PROSODY_PACKAGE}}$/,/^$/' \
+          | grep '^Version:' | cut -d' ' -f2- | cut -d'~' -f1 \
+        )"
         echo "Latest prosody package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
         [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
@@ -32,7 +36,10 @@ jobs:
     - name: Build image
       if: ${{!env.LATEST}}
       working-directory: ./prosody
-      run: docker build . --tag prosody --build-arg PROSODY_PACKAGE=${{env.PROSODY_PACKAGE}}
+      run: |
+        docker build . --tag prosody \
+          --build-arg PROSODY_PACKAGE=${{env.PROSODY_PACKAGE}} \
+          --label "org.opencontainers.image.source=https://hg.prosody.im/trunk/"
     - name: Log in to registry
       if: ${{!env.LATEST}}
       run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
@@ -40,9 +47,10 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{github.repository_owner}}/prosody
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=nnnn20430/github-actions gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
+        docker tag prosody $IMAGE_ID:${{env.LATEST_VERSION}}
         docker tag prosody $IMAGE_ID:latest
-        docker push $IMAGE_ID:latest
+        docker push -a $IMAGE_ID
 
   build-jami-daemon:
     runs-on: ubuntu-latest
@@ -59,7 +67,10 @@ jobs:
     - name: Build image
       if: ${{!env.LATEST}}
       working-directory: ./jami-daemon
-      run: docker build . --tag jami-daemon --build-arg cmake_args=-DJAMI_NODEJS=ON
+      run: |
+        docker build . --tag jami-daemon \
+          --build-arg cmake_args=-DJAMI_NODEJS=ON \
+          --label "org.opencontainers.image.source=https://git.jami.net/savoirfairelinux/jami-daemon.git"
     - name: Log in to registry
       if: ${{!env.LATEST}}
       run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
@@ -67,9 +78,10 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{github.repository_owner}}/jami-daemon
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=nnnn20430/github-actions gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
+        docker tag jami-daemon $IMAGE_ID:${{env.LATEST_VERSION}}
         docker tag jami-daemon $IMAGE_ID:latest
-        docker push $IMAGE_ID:latest
+        docker push -a $IMAGE_ID
 
   workflow-keepalive:
     if: github.event_name == 'schedule'
