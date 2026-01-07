@@ -92,4 +92,5 @@ jobs:
       GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       GH_REPO: ${{github.repository}}
     steps:
-    - run: gh workflow enable "${GITHUB_WORKFLOW##*/}"
+    - run: gh workflow list -a
+    #- run: gh workflow enable "${GITHUB_WORKFLOW##*/}"
