@@ -92,5 +92,6 @@ jobs:
       GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       GH_REPO: ${{github.repository}}
     steps:
-    - run: env
-    #- run: gh workflow enable "${GITHUB_WORKFLOW##*/}"
+    - run: |
+        WORKFLOW="${GITHUB_WORKFLOW_REF%%@*}
+        gh workflow enable "${WORKFLOW##*/}"
