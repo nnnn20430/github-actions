@@ -83,6 +83,44 @@ jobs:
         docker tag jami-daemon $IMAGE_ID:latest
         docker push -a $IMAGE_ID
 
+  build-jami-web:
+    needs: build-jami-daemon
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+    - name: Checkout jami-web repo
+      run: |
+        git clone --depth 1 https://git.jami.net/savoirfairelinux/jami-web.git
+        LATEST_VERSION="$(TZ=UTC git -C jami-web show -s --pretty=%cd --date=format-local:%Y%m%d HEAD)"
+        echo "Latest Jami wb version is $LATEST_VERSION"
+        echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+        [ x"$LATEST_VERSION" == x"${{vars.JAMI_WEB_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
+    - name: Pull daemon image
+      if: ${{!env.LATEST}}
+      run: |
+        IMAGE_ID=ghcr.io/${{github.repository_owner}}/jami-daemon
+        docker pull $IMAGE_ID:latest
+        docker tag $IMAGE_ID:latest jami-daemon
+    - name: Build image
+      if: ${{!env.LATEST}}
+      working-directory: ./jami-web
+      run: |
+        docker build . --tag jami-web \
+          --target production \
+          --label "org.opencontainers.image.source=https://git.jami.net/savoirfairelinux/jami-web.git"
+    - name: Log in to registry
+      if: ${{!env.LATEST}}
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
+    - name: Push image
+      if: ${{!env.LATEST}}
+      run: |
+        IMAGE_ID=ghcr.io/${{github.repository_owner}}/jami-web
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_WEB_VERSION --body "${{env.LATEST_VERSION}}"
+        docker tag jami-web $IMAGE_ID:${{env.LATEST_VERSION}}
+        docker tag jami-web $IMAGE_ID:latest
+        docker push -a $IMAGE_ID
+
   workflow-keepalive:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
@@ -92,6 +130,7 @@ jobs:
       GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       GH_REPO: ${{github.repository}}
     steps:
-    - run: |
+    - name: Keepalive
+      run: |
         WORKFLOW="${GITHUB_WORKFLOW_REF%%@*}"
         gh workflow enable "${WORKFLOW##*/}"
