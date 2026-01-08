@@ -1,0 +1,15 @@
+name: Mirror images to docker hub
+
+on:
+  registry_package:
+    types: [published]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+    - run: env
