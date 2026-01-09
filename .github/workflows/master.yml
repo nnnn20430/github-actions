@@ -44,7 +44,7 @@ jobs:
           --label "org.opencontainers.image.source=https://hg.prosody.im/trunk/"
     - name: Log in to registry
       if: ${{!env.LATEST}}
-      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.repository_owner}} --password-stdin
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
@@ -83,7 +83,7 @@ jobs:
           --label "org.opencontainers.image.source=https://git.jami.net/savoirfairelinux/jami-daemon.git"
     - name: Log in to registry
       if: ${{!env.LATEST}}
-      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.repository_owner}} --password-stdin
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
@@ -129,7 +129,7 @@ jobs:
           --label "org.opencontainers.image.source=https://git.jami.net/savoirfairelinux/jami-web.git"
     - name: Log in to registry
       if: ${{!env.LATEST}}
-      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.repository_owner}} --password-stdin
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
