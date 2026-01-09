@@ -17,14 +17,14 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-    - name: Pull image
+    - name: Pull ${{inputs.name}} from ghcr.io
       run: |
         IMAGE_ID=ghcr.io/${{github.repository_owner}}/${{inputs.name}}
         docker pull $IMAGE_ID:latest
         docker tag $IMAGE_ID:latest ${{inputs.name}}
-    - name: Log in to registry
+    - name: Log in to docker hub registry
       run: echo "${{secrets.PAT_DOCKER_PUSH}}" | docker login -u ${{github.actor}} --password-stdin
-    - name: Push image
+    - name: Push ${{inputs.name}} to docker hub
       run: |
         IMAGE_ID=${{github.repository_owner}}/${{inputs.name}}
         [ "${{inputs.version}}" ] && docker tag ${{inputs.name}} $IMAGE_ID:${{inputs.version}}
