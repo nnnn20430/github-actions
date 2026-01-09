@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      actions: write
     env:
       IMAGE_NAME: prosody
       PROSODY_PACKAGE: prosody-13.0
@@ -48,10 +49,14 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
         docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
         docker tag $IMAGE_NAME $IMAGE_ID:latest
         docker push -a $IMAGE_ID
+    - name: Post push
+      if: ${{!env.LATEST}}
+      run: |
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
+        gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
 
   build-jami-daemon:
     runs-on: ubuntu-latest
@@ -81,10 +86,14 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
         docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
         docker tag $IMAGE_NAME $IMAGE_ID:latest
         docker push -a $IMAGE_ID
+    - name: Post push
+      if: ${{!env.LATEST}}
+      run: |
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
+        gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
 
   build-jami-web:
     needs: build-jami-daemon
@@ -121,10 +130,14 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_WEB_VERSION --body "${{env.LATEST_VERSION}}"
         docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
         docker tag $IMAGE_NAME $IMAGE_ID:latest
         docker push -a $IMAGE_ID
+    - name: Post push
+      if: ${{!env.LATEST}}
+      run: |
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_WEB_VERSION --body "${{env.LATEST_VERSION}}"
+        gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
 
   workflow-keepalive:
     if: github.event_name == 'schedule'
