@@ -62,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      actions: write
     env:
       IMAGE_NAME: jami-daemon
     steps:
@@ -100,6 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      actions: write
     env:
       IMAGE_NAME: jami-web
     steps:
