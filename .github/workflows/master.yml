@@ -55,8 +55,9 @@ jobs:
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
-        gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        export GH_REPO=${{github.repository}}
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
 
   build-jami-daemon:
     runs-on: ubuntu-latest
@@ -93,8 +94,9 @@ jobs:
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
-        gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        export GH_REPO=${{github.repository}}
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
 
   build-jami-web:
     needs: build-jami-daemon
@@ -138,8 +140,9 @@ jobs:
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
-        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} GH_REPO=${{github.repository}} gh variable set JAMI_WEB_VERSION --body "${{env.LATEST_VERSION}}"
-        gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        export GH_REPO=${{github.repository}}
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set JAMI_WEB_VERSION --body "${{env.LATEST_VERSION}}"
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
 
   workflow-keepalive:
     if: github.event_name == 'schedule'
