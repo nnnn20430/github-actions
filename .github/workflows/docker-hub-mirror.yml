@@ -1,4 +1,5 @@
 name: Mirror images to docker hub
+run-name: Mirror ${{inputs.name}} to docker hub
 
 on:
   workflow_dispatch:
