@@ -24,7 +24,7 @@ jobs:
         docker pull $IMAGE_ID:latest
         docker tag $IMAGE_ID:latest ${{inputs.name}}
     - name: Log in to docker hub registry
-      run: echo "${{secrets.PAT_DOCKER_PUSH}}" | docker login -u ${{github.actor}} --password-stdin
+      run: echo "${{secrets.PAT_DOCKER_PUSH}}" | docker login -u ${{github.repository_owner}} --password-stdin
     - name: Push ${{inputs.name}} to docker hub
       run: |
         IMAGE_ID=${{github.repository_owner}}/${{inputs.name}}
