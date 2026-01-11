@@ -155,5 +155,5 @@ jobs:
     steps:
     - name: Keepalive
       run: |
-        WORKFLOW="${GITHUB_WORKFLOW_REF%%@*}"
+        WORKFLOW="${GITHUB_WORKFLOW_REF%@*}"
         gh workflow enable "${WORKFLOW##*/}"
