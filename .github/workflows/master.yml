@@ -10,6 +10,63 @@ defaults:
     shell: bash
 
 jobs:
+  build-mumble-server:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      actions: write
+    env:
+      IMAGE_NAME: mumble-server
+    steps:
+    - name: Check version
+      run: |
+        LATEST_VERSION="$(curl -s "https://dl-cdn.alpinelinux.org/alpine/edge/community/x86_64/APKINDEX.tar.gz" \
+          | tar -xzO APKINDEX \
+          | awk '/^P:mumble-server$/,/^V:/' \
+          | grep '^V:' | tail -c +3 \
+        )"
+        echo "Latest mumble-server package version is $LATEST_VERSION"
+        echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+        [ x"$LATEST_VERSION" == x"${{vars.MUMBLE_SERVER_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
+    - name: Fetch auxiliary files
+      if: ${{!env.LATEST}}
+      run: |
+        wget --quiet https://raw.githubusercontent.com/mumble-voip/mumble-docker/refs/heads/master/entrypoint.sh
+        wget --quiet https://raw.githubusercontent.com/mumble-voip/mumble/refs/heads/master/auxiliary_files/mumble-server.ini
+    - name: Build image
+      if: ${{!env.LATEST}}
+      run: |
+        docker run -d --rm --name build alpine:edge sleep infinity
+        docker exec build apk add mumble-server su-exec bash
+        docker exec build rm -rf /var/cache
+        docker exec build mkdir /etc/mumble
+        docker cp entrypoint.sh build:/entrypoint.sh
+        docker cp mumble-server.ini build:/etc/mumble/bare_config.ini
+        docker commit \
+          -c 'EXPOSE 64738/tcp 64738/udp' \
+          -c 'VOLUME ["/data"]' \
+          -c 'ENTRYPOINT ["/entrypoint.sh"]' \
+          -c 'CMD ["/usr/bin/mumble-server"]' \
+          -c 'LABEL org.opencontainers.image.source=https://github.com/mumble-voip/mumble' \
+          build $IMAGE_NAME
+        docker stop -t0 build
+    - name: Log in to registry
+      if: ${{!env.LATEST}}
+      run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.repository_owner}} --password-stdin
+    - name: Push image
+      if: ${{!env.LATEST}}
+      run: |
+        IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
+        docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
+        docker tag $IMAGE_NAME $IMAGE_ID:latest
+        docker push -a $IMAGE_ID
+    - name: Post push
+      if: ${{!env.LATEST}}
+      run: |
+        export GH_REPO=${{github.repository}}
+        GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set MUMBLE_SERVER_VERSION --body "${{env.LATEST_VERSION}}"
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+
   build-prosody:
     runs-on: ubuntu-latest
     permissions:
