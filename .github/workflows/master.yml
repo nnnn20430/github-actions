@@ -33,6 +33,7 @@ jobs:
       run: |
         wget --quiet https://raw.githubusercontent.com/mumble-voip/mumble-docker/refs/heads/master/entrypoint.sh
         wget --quiet https://raw.githubusercontent.com/mumble-voip/mumble/refs/heads/master/auxiliary_files/mumble-server.ini
+        chmod +x entrypoint.sh
     - name: Build image
       if: ${{!env.LATEST}}
       run: |
