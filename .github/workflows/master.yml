@@ -38,7 +38,7 @@ jobs:
       if: ${{!env.LATEST}}
       run: |
         docker run -d --rm --name build alpine:edge sleep infinity
-        docker exec build apk add mumble-server su-exec bash
+        docker exec build apk add mumble-server coreutils bash su-exec
         docker exec build rm -rf /var/cache
         docker exec build mkdir /etc/mumble
         docker cp entrypoint.sh build:/entrypoint.sh
