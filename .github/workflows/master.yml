@@ -16,16 +16,16 @@ jobs:
       packages: write
       actions: write
     env:
-      IMAGE_NAME: mumble-server
+      NAME: mumble-server
     steps:
     - name: Check version
       run: |
         LATEST_VERSION="$(curl -s "https://dl-cdn.alpinelinux.org/alpine/edge/community/x86_64/APKINDEX.tar.gz" \
           | tar -xzO APKINDEX \
-          | awk '/^P:${{env.IMAGE_NAME}}$/,/^V:/' \
+          | awk '/^P:${{env.NAME}}$/,/^V:/' \
           | grep '^V:' | tail -c +3 \
         )"
-        echo "Latest ${{env.IMAGE_NAME}} package version is $LATEST_VERSION"
+        echo "Latest ${{env.NAME}} package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
         [ x"$LATEST_VERSION" == x"${{vars.MUMBLE_SERVER_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
     - name: Fetch auxiliary files
@@ -49,7 +49,7 @@ jobs:
           -c 'VOLUME ["/data"]' \
           -c 'ENTRYPOINT ["/entrypoint.sh"]' \
           -c 'CMD ["/usr/bin/mumble-server"]' \
-          build $IMAGE_NAME
+          build ${{env.NAME}}
         docker stop -t0 build
     - name: Log in to registry
       if: ${{!env.LATEST}}
@@ -57,16 +57,16 @@ jobs:
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
-        IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
-        docker tag $IMAGE_NAME $IMAGE_ID:latest
-        docker push -a $IMAGE_ID
+        REPO=ghcr.io/${{github.repository_owner}}/${{env.NAME}}
+        docker tag ${{env.NAME}} $REPO:${{env.LATEST_VERSION}}
+        docker tag ${{env.NAME}} $REPO:latest
+        docker push -a $REPO
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
         export GH_REPO=${{github.repository}}
         GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set MUMBLE_SERVER_VERSION --body "${{env.LATEST_VERSION}}"
-        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=${{env.NAME}} -f version=${{env.LATEST_VERSION}}
 
   build-prosody:
     runs-on: ubuntu-latest
@@ -74,16 +74,16 @@ jobs:
       packages: write
       actions: write
     env:
-      IMAGE_NAME: prosody
+      NAME: prosody
     steps:
     - name: Check version
       run: |
         LATEST_VERSION="$(curl -s "https://dl-cdn.alpinelinux.org/alpine/edge/community/x86_64/APKINDEX.tar.gz" \
           | tar -xzO APKINDEX \
-          | awk '/^P:${{env.IMAGE_NAME}}$/,/^V:/' \
+          | awk '/^P:${{env.NAME}}$/,/^V:/' \
           | grep '^V:' | tail -c +3 \
         )"
-        echo "Latest ${{env.IMAGE_NAME}} package version is $LATEST_VERSION"
+        echo "Latest ${{env.NAME}} package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
         [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
     - name: Fetch auxiliary files
@@ -105,7 +105,7 @@ jobs:
           -c 'VOLUME ["/var/lib/prosody"]' \
           -c 'ENV __FLUSH_LOG yes' \
           -c 'CMD ["/usr/bin/prosody", "-F"]' \
-          build $IMAGE_NAME
+          build ${{env.NAME}}
         docker stop -t0 build
     - name: Log in to registry
       if: ${{!env.LATEST}}
@@ -113,16 +113,16 @@ jobs:
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
-        IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
-        docker tag $IMAGE_NAME $IMAGE_ID:latest
-        docker push -a $IMAGE_ID
+        REPO=ghcr.io/${{github.repository_owner}}/${{env.NAME}}
+        docker tag ${{env.NAME}} $REPO:${{env.LATEST_VERSION}}
+        docker tag ${{env.NAME}} $REPO:latest
+        docker push -a $REPO
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
         export GH_REPO=${{github.repository}}
         GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set PROSODY_VERSION --body "${{env.LATEST_VERSION}}"
-        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=${{env.NAME}} -f version=${{env.LATEST_VERSION}}
 
   build-jami-daemon:
     runs-on: ubuntu-latest
@@ -130,7 +130,7 @@ jobs:
       packages: write
       actions: write
     env:
-      IMAGE_NAME: jami-daemon
+      NAME: jami-daemon
     steps:
     - name: Checkout jami-daemon repo
       run: |
@@ -143,7 +143,7 @@ jobs:
       if: ${{!env.LATEST}}
       working-directory: ./jami-daemon
       run: |
-        docker build . --tag $IMAGE_NAME \
+        docker build . --tag ${{env.NAME}} \
           --build-arg cmake_args=-DJAMI_NODEJS=ON \
           --label "org.opencontainers.image.source=https://git.jami.net/savoirfairelinux/jami-daemon.git"
     - name: Log in to registry
@@ -152,16 +152,16 @@ jobs:
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
-        IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
-        docker tag $IMAGE_NAME $IMAGE_ID:latest
-        docker push -a $IMAGE_ID
+        REPO=ghcr.io/${{github.repository_owner}}/${{env.NAME}}
+        docker tag ${{env.NAME}} $REPO:${{env.LATEST_VERSION}}
+        docker tag ${{env.NAME}} $REPO:latest
+        docker push -a $REPO
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
         export GH_REPO=${{github.repository}}
         GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set JAMI_DAEMON_VERSION --body "${{env.LATEST_VERSION}}"
-        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=${{env.NAME}} -f version=${{env.LATEST_VERSION}}
 
   build-jami-web:
     needs: build-jami-daemon
@@ -170,7 +170,7 @@ jobs:
       packages: write
       actions: write
     env:
-      IMAGE_NAME: jami-web
+      NAME: jami-web
     steps:
     - name: Checkout jami-web repo
       run: |
@@ -182,14 +182,14 @@ jobs:
     - name: Pull daemon image
       if: ${{!env.LATEST}}
       run: |
-        IMAGE_ID=ghcr.io/${{github.repository_owner}}/jami-daemon
-        docker pull $IMAGE_ID:latest
-        docker tag $IMAGE_ID:latest jami-daemon
+        REPO=ghcr.io/${{github.repository_owner}}/jami-daemon
+        docker pull $REPO:latest
+        docker tag $REPO:latest jami-daemon
     - name: Build image
       if: ${{!env.LATEST}}
       working-directory: ./jami-web
       run: |
-        docker build . --tag $IMAGE_NAME \
+        docker build . --tag ${{env.NAME}} \
           --target production \
           --label "org.opencontainers.image.source=https://git.jami.net/savoirfairelinux/jami-web.git"
     - name: Log in to registry
@@ -198,16 +198,16 @@ jobs:
     - name: Push image
       if: ${{!env.LATEST}}
       run: |
-        IMAGE_ID=ghcr.io/${{github.repository_owner}}/$IMAGE_NAME
-        docker tag $IMAGE_NAME $IMAGE_ID:${{env.LATEST_VERSION}}
-        docker tag $IMAGE_NAME $IMAGE_ID:latest
-        docker push -a $IMAGE_ID
+        REPO=ghcr.io/${{github.repository_owner}}/${{env.NAME}}
+        docker tag ${{env.NAME}} $REPO:${{env.LATEST_VERSION}}
+        docker tag ${{env.NAME}} $REPO:latest
+        docker push -a $REPO
     - name: Post push
       if: ${{!env.LATEST}}
       run: |
         export GH_REPO=${{github.repository}}
         GH_TOKEN=${{secrets.PAT_VARIABLES_ACCESS}} gh variable set JAMI_WEB_VERSION --body "${{env.LATEST_VERSION}}"
-        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=$IMAGE_NAME -f version=${{env.LATEST_VERSION}}
+        GH_TOKEN=${{secrets.GITHUB_TOKEN}} gh workflow run docker-hub-mirror.yml -f name=${{env.NAME}} -f version=${{env.LATEST_VERSION}}
 
   workflow-keepalive:
     if: github.event_name == 'schedule'
