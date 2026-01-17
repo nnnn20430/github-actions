@@ -22,10 +22,10 @@ jobs:
       run: |
         LATEST_VERSION="$(curl -s "https://dl-cdn.alpinelinux.org/alpine/edge/community/x86_64/APKINDEX.tar.gz" \
           | tar -xzO APKINDEX \
-          | awk '/^P:mumble-server$/,/^V:/' \
+          | awk '/^P:${{env.IMAGE_NAME}}$/,/^V:/' \
           | grep '^V:' | tail -c +3 \
         )"
-        echo "Latest mumble-server package version is $LATEST_VERSION"
+        echo "Latest ${{env.IMAGE_NAME}} package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
         [ x"$LATEST_VERSION" == x"${{vars.MUMBLE_SERVER_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
     - name: Fetch auxiliary files
@@ -75,31 +75,35 @@ jobs:
       actions: write
     env:
       IMAGE_NAME: prosody
-      PROSODY_PACKAGE: prosody-13.0
     steps:
     - name: Check version
       run: |
-        LATEST_VERSION="$(curl -s http://packages.prosody.im/debian/dists/bookworm/main/binary-amd64/Packages.gz \
-          | gunzip -c \
-          | awk '/^Package: ${{env.PROSODY_PACKAGE}}$/,/^$/' \
-          | grep '^Version:' | cut -d' ' -f2- | cut -d'~' -f1 \
+        LATEST_VERSION="$(curl -s "https://dl-cdn.alpinelinux.org/alpine/edge/community/x86_64/APKINDEX.tar.gz" \
+          | tar -xzO APKINDEX \
+          | awk '/^P:${{env.IMAGE_NAME}}$/,/^V:/' \
+          | grep '^V:' | tail -c +3 \
         )"
-        echo "Latest prosody package version is $LATEST_VERSION"
+        echo "Latest ${{env.IMAGE_NAME}} package version is $LATEST_VERSION"
         echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
         [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
-    - name: Checkout prosody docker repo
+    - name: Fetch auxiliary files
       if: ${{!env.LATEST}}
-      uses: actions/checkout@v6
-      with:
-        repository: prosody/prosody-docker
-        path: prosody
+      run: wget --quiet https://raw.githubusercontent.com/prosody/prosody-docker/refs/heads/master/configs/prosody-trunk.cfg.lua
     - name: Build image
       if: ${{!env.LATEST}}
-      working-directory: ./prosody
       run: |
-        docker build . --tag $IMAGE_NAME \
-          --build-arg PROSODY_PACKAGE=${{env.PROSODY_PACKAGE}} \
-          --label "org.opencontainers.image.source=https://hg.prosody.im/trunk/"
+        docker run -d --rm --name build alpine:edge sleep infinity
+        docker exec build apk add prosody
+        docker exec build rm -rf /var/cache
+        docker cp prosody-trunk.cfg.lua build:/etc/prosody/prosody.cfg.lua
+        docker commit \
+          -c 'LABEL org.opencontainers.image.source=https://hg.prosody.im/trunk/' \
+          -c 'EXPOSE 80 443 5222 5269 5347 5280 5281' \
+          -c 'VOLUME ["/var/lib/prosody"]' \
+          -c 'ENV __FLUSH_LOG yes' \
+          -c 'CMD ["/usr/bin/prosody", "-F"]' \
+          build $IMAGE_NAME
+        docker stop -t0 build
     - name: Log in to registry
       if: ${{!env.LATEST}}
       run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.repository_owner}} --password-stdin
