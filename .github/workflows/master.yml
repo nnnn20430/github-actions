@@ -88,7 +88,9 @@ jobs:
         [ x"$LATEST_VERSION" == x"${{vars.PROSODY_VERSION}}" ] && echo "LATEST=true" >> $GITHUB_ENV || :
     - name: Fetch auxiliary files
       if: ${{!env.LATEST}}
-      run: wget --quiet https://raw.githubusercontent.com/prosody/prosody-docker/refs/heads/master/configs/prosody-trunk.cfg.lua
+      run: |
+        wget --quiet https://raw.githubusercontent.com/prosody/prosody-docker/refs/heads/master/configs/prosody-trunk.cfg.lua
+        sed -i '1i run_as_root = true' prosody-trunk.cfg.lua
     - name: Build image
       if: ${{!env.LATEST}}
       run: |
