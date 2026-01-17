@@ -95,6 +95,7 @@ jobs:
         docker run -d --rm --name build alpine:edge sleep infinity
         docker exec build apk add prosody
         docker exec build rm -rf /var/cache
+        docker exec build mkdir /etc/prosody/conf.d
         docker cp prosody-trunk.cfg.lua build:/etc/prosody/prosody.cfg.lua
         docker commit \
           -c 'LABEL org.opencontainers.image.source=https://hg.prosody.im/trunk/' \
