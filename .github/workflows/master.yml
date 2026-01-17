@@ -44,11 +44,11 @@ jobs:
         docker cp entrypoint.sh build:/entrypoint.sh
         docker cp mumble-server.ini build:/etc/mumble/bare_config.ini
         docker commit \
+          -c 'LABEL org.opencontainers.image.source=https://github.com/mumble-voip/mumble' \
           -c 'EXPOSE 64738/tcp 64738/udp' \
           -c 'VOLUME ["/data"]' \
           -c 'ENTRYPOINT ["/entrypoint.sh"]' \
           -c 'CMD ["/usr/bin/mumble-server"]' \
-          -c 'LABEL org.opencontainers.image.source=https://github.com/mumble-voip/mumble' \
           build $IMAGE_NAME
         docker stop -t0 build
     - name: Log in to registry
